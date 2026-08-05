@@ -1,0 +1,21 @@
+{
+  "name": "focus-kids",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace server & npm run dev --workspace client",
+    "dev:client": "npm run dev --workspace client",
+    "dev:server": "npm run dev --workspace server",
+    "build": "npm run build --workspace server && npm run build --workspace client",
+    "db:init": "npm run db:init --workspace server",
+    "db:start": "npm run db:start --workspace server",
+    "db:stop": "npm run db:stop --workspace server"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
