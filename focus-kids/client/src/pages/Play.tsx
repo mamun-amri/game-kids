@@ -78,7 +78,10 @@ export function Play() {
         <ResultModal
           outcome={outcome}
           isDaily={isDaily}
-          onReplay={() => setRound((r) => r + 1)}
+          onReplay={() => {
+            setOutcome(null);
+            setRound((r) => r + 1);
+          }}
           onNext={nextLevel <= 1000 ? () => navigate(`/play/${gameType}/${nextLevel}`) : undefined}
           onExit={() => navigate(isDaily ? '/dashboard' : `/games/${gameType}/levels`)}
         />
