@@ -63,8 +63,10 @@ export function makeButton(
 
   const container = scene.add.container(x, y, [g, t]);
   container.setSize(w, h);
+  // Phaser shifts the hit-area rect by displayOrigin (w/2,h/2) for containers,
+  // so the rect must start at (0,0) to cover the visible button.
   container.setInteractive(
-    new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h),
+    new Phaser.Geom.Rectangle(0, 0, w, h),
     Phaser.Geom.Rectangle.Contains,
   );
   container.on('pointerdown', () => {

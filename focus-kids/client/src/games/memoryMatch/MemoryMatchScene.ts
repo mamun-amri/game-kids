@@ -19,6 +19,8 @@ interface Card {
   symbol: string;
   flipped: boolean;
   matched: boolean;
+  /** true while a flip animation is in progress to block conflicting taps. */
+  busy: boolean;
 }
 
 export class MemoryMatchScene extends BaseGameScene {
@@ -95,36 +97,49 @@ export class MemoryMatchScene extends BaseGameScene {
 
     const container = this.add.container(x, y, [back, q, front]);
     container.setSize(w, h);
+    // Note: Phaser shifts the hit-area rect by displayOrigin (width/2) for
+    // containers, so the rect must start at (0,0) to cover the visual card.
     container.setInteractive(
-      new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h),
+      new Phaser.Geom.Rectangle(0, 0, w, h),
       Phaser.Geom.Rectangle.Contains,
     );
     container.on('pointerdown', () => this.onCardTap(container));
 
-    return { container, back, question: q, front, symbol, flipped: false, matched: false };
+    return {
+      container,
+      back,
+      question: q,
+      front,
+      symbol,
+      flipped: false,
+      matched: false,
+      busy: false,
+    };
   }
 
   private onCardTap(container: Phaser.GameObjects.Container) {
     if (this.locked || this.completed || this.quit) return;
     const card = this.cards.find((c) => c.container === container);
-    if (!card || card.flipped || card.matched) return;
+    if (!card || card.flipped || card.matched || card.busy) return;
 
     this.flipCard(card, true);
     this.flipped.push(card);
 
     if (this.flipped.length === 2) {
       this.locked = true;
-      this.time.delayedCall(500, () => this.checkMatch());
+      this.time.delayedCall(380, () => this.checkMatch());
     }
   }
 
   private flipCard(card: Card, showFront: boolean) {
+    if (card.busy) return;
+    card.busy = true;
     card.flipped = showFront;
-    const target = showFront ? 0.06 : 1;
+
     this.tweens.add({
       targets: card.container,
-      scaleX: target,
-      duration: 110,
+      scaleX: 0.06,
+      duration: 85,
       onComplete: () => {
         card.back.setVisible(!showFront);
         card.question.setVisible(!showFront);
@@ -132,7 +147,10 @@ export class MemoryMatchScene extends BaseGameScene {
         this.tweens.add({
           targets: card.container,
           scaleX: 1,
-          duration: 110,
+          duration: 85,
+          onComplete: () => {
+            card.busy = false;
+          },
         });
       },
     });
@@ -158,7 +176,7 @@ export class MemoryMatchScene extends BaseGameScene {
     } else {
       this.wrong += 1;
       this.wrongFlips += 1;
-      this.time.delayedCall(250, () => {
+      this.time.delayedCall(200, () => {
         this.flipCard(a, false);
         this.flipCard(b, false);
       });
