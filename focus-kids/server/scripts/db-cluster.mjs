@@ -14,7 +14,36 @@ const pgData = path.join(projectRoot, 'pgdata');
 const logFile = path.join(pgData, 'postgres.log');
 const PORT = 5433;
 
-const PGBIN = process.env.PGBIN || '/usr/lib/postgresql/16/bin';
+function findPgBin() {
+  if (process.env.PGBIN) {
+    return process.env.PGBIN;
+  }
+  try {
+    // If initdb is in the PATH, use it
+    const initdbPath = execSync('which initdb', { encoding: 'utf8' }).trim();
+    return path.dirname(initdbPath);
+  } catch (e) {
+    // Look in common install locations
+    const commonPaths = [
+      '/opt/homebrew/opt/postgresql@16/bin',
+      '/usr/local/bin',
+      '/usr/lib/postgresql/16/bin',
+      '/usr/lib/postgresql/15/bin',
+      '/usr/lib/postgresql/14/bin',
+    ];
+    for (const p of commonPaths) {
+      if (existsSync(path.join(p, 'initdb'))) {
+        return p;
+      }
+    }
+  }
+  console.error(
+    'Could not find PostgreSQL binaries. Please install PostgreSQL 14+ or set the PGBIN environment variable.',
+  );
+  process.exit(1);
+}
+
+const PGBIN = findPgBin();
 const pgctl = path.join(PGBIN, 'pg_ctl');
 const initdb = path.join(PGBIN, 'initdb');
 const psql = path.join(PGBIN, 'psql');

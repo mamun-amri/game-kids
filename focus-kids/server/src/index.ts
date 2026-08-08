@@ -1,3 +1,4 @@
+import 'express-async-errors';
 import express from 'express';
 import cors from 'cors';
 import { config } from './config.js';
@@ -18,6 +19,13 @@ app.use('/api/meta', metaRouter);
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
+
+app.use(
+  (err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    console.error(err);
+    res.status(500).json({ error: 'Terjadi kesalahan pada server' });
+  },
+);
 
 app.listen(config.port, () => {
   console.log(`Focus Kids API listening on http://localhost:${config.port}`);

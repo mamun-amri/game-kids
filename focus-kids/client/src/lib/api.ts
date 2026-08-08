@@ -49,4 +49,9 @@ export const api = {
   ) => request<{ ok: boolean }>(`/children/${id}/sync`, { method: 'POST', body: JSON.stringify(payload) }),
 
   report: () => request<{ generated_at: string; children: unknown[] }>('/parent/report'),
+
+  aiSummary: (childId: number) =>
+    request<{ generated_at: string; source: 'ai' | 'heuristic'; summary: string }>(
+      `/parent/ai-summary/${childId}`,
+    ),
 };

@@ -201,6 +201,40 @@ function ChildReport({ child }: { child: ReportChild }) {
     { label: 'Bintang', value: Math.min(100, child.summary.total_stars), color: '#facc15' },
   ];
 
+  const [aiState, setAiState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const [aiSummary, setAiSummary] = useState('');
+  const [aiError, setAiError] = useState('');
+
+  const loadAiSummary = async () => {
+    setAiState('loading');
+    setAiError('');
+    try {
+      const res = await api.aiSummary(child.id);
+      setAiSummary(res.summary);
+      setAiState('done');
+    } catch (e) {
+      setAiError((e as Error).message);
+      setAiState('error');
+    }
+  };
+
+  const renderSummary = (text: string) =>
+    text.split('\n').map((line, i) => {
+      if (!line.trim()) return <div key={i} style={{ height: 8 }} />;
+      const parts = line.split(/(\*\*[^*]+\*\*)/g).filter(Boolean);
+      return (
+        <p key={i} style={{ margin: '0 0 8px', lineHeight: 1.55 }}>
+          {parts.map((p, j) =>
+            p.startsWith('**') && p.endsWith('**') ? (
+              <strong key={j}>{p.slice(2, -2)}</strong>
+            ) : (
+              <span key={j}>{p}</span>
+            ),
+          )}
+        </p>
+      );
+    });
+
   return (
     <div className="parent-tile">
       <div className="between wrap mb-8">
@@ -213,16 +247,44 @@ function ChildReport({ child }: { child: ReportChild }) {
             </div>
           </div>
         </div>
-        <span
-          className="chip"
-          style={{
-            background: child.summary.avg_score >= 85 ? '#dcfce7' : child.summary.avg_score >= 70 ? '#fef9c3' : '#fee2e2',
-            color: child.summary.avg_score >= 85 ? '#166534' : child.summary.avg_score >= 70 ? '#854d0e' : '#991b1b',
-          }}
-        >
-          🧠 {child.summary.focus_level}
-        </span>
+        <div className="row">
+          <span
+            className="chip"
+            style={{
+              background: child.summary.avg_score >= 85 ? '#dcfce7' : child.summary.avg_score >= 70 ? '#fef9c3' : '#fee2e2',
+              color: child.summary.avg_score >= 85 ? '#166534' : child.summary.avg_score >= 70 ? '#854d0e' : '#991b1b',
+            }}
+          >
+            🧠 {child.summary.focus_level}
+          </span>
+          <button
+            className="btn sky"
+            onClick={loadAiSummary}
+            disabled={aiState === 'loading'}
+            style={{ padding: '6px 12px', fontSize: 13 }}
+          >
+            {aiState === 'loading' ? '⏳ Menganalisis...' : '🤖 Ringkasan AI'}
+          </button>
+        </div>
       </div>
+
+      {aiState !== 'idle' && (
+        <div
+          className="card mb-16"
+          style={{ background: '#f5f0ff', border: '1px solid #e4d9ff' }}
+        >
+          <div className="section-title" style={{ color: '#7c3aed' }}>
+            🤖 Ringkasan Perkembangan {child.name}
+          </div>
+          {aiState === 'loading' && <p className="muted">AI sedang menganalisis data permainan...</p>}
+          {aiState === 'error' && (
+            <p style={{ color: '#b91c1c' }}>⚠️ {aiError}</p>
+          )}
+          {aiState === 'done' && (
+            <div style={{ fontSize: 14 }}>{renderSummary(aiSummary)}</div>
+          )}
+        </div>
+      )}
 
       <div className="stat-grid mb-16">
         <div className="stat-tile">

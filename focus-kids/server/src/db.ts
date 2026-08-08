@@ -1,8 +1,14 @@
 import pg from 'pg';
 import { config } from './config.js';
 
+const dbUrl = new URL(config.databaseUrl);
+
 export const pool = new pg.Pool({
-  connectionString: config.databaseUrl,
+  user: dbUrl.username,
+  host: dbUrl.hostname,
+  port: Number(dbUrl.port),
+  database: dbUrl.pathname.slice(1),
+  password: '',
 });
 
 export async function query<T extends pg.QueryResultRow = pg.QueryResultRow>(
